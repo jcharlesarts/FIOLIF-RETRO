@@ -1,6 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=IM+Fell+English+SC&family=Forum&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+#scoreboard-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  gap: 0.6rem;
+  flex-wrap: wrap; /* prevent overflow on iPad portrait */
+}
+#timeline-bar {
+  flex: 1;
+  height: 12px;
+  background: #2c1030;
+  border: 2px solid #ffe30e;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 6px #24f0ff77;
+  position: relative;
+}
+#timeline-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #24f0ff, #ff1697);
+  transition: width 0.5s ease;
+}
+/* font imports moved to top to ensure they load */
 /* === AUDIO ICON BUTTONS === */
 .audio-icon {
   width: 32px;
@@ -29,6 +56,26 @@
   max-width: 32vw;
   position: static;
 }
+/* Loot button (scoreboard topbar) */
+#btn-loot, .loot-btn {
+  font-family: 'Forum', 'Cinzel', serif;
+  font-size: 0.95em;
+  padding: 0.26em 0.9em;
+  border-radius: 1.1em;
+  background: linear-gradient(90deg, #24f0ff 55%, #ffe30e 115%);
+  color: #180f2b;
+  border: 2px solid #24f0ff;
+  margin: 0 0.2em;
+  box-shadow: 0 1px 6px #24f0ff55;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.1s;
+}
+#btn-loot:hover, .loot-btn:hover,
+#btn-loot:focus, .loot-btn:focus {
+  background: linear-gradient(90deg, #fffa91 60%, #24f0ff 130%);
+  box-shadow: 0 2px 12px #24f0ff77;
+}
+#btn-loot:active, .loot-btn:active { transform: translateY(1px); }
 #btn-return-menu.menu-btn:hover,
 #btn-return-menu.menu-btn:focus {
   background: linear-gradient(90deg, #fffa91 77%, #f77eff 100%);
@@ -54,7 +101,8 @@
   display: flex; justify-content: center; align-items: center;
 }
 #cutscene-img-zoom {
-  width: 700px; height: 700px; /* Update if your source is a different size */
+  width: min(70vmin, 700px);
+  height: auto; /* allow responsive scaling */
   max-width: none;
   will-change: transform;
   transform: scale(1.4) translate(-120px, 110px);
@@ -130,20 +178,28 @@ html, body {
   background: linear-gradient(135deg, #0e0816 70%, #2c1030 100%);
   color: #fff;
   font-family: "Press Start 2P", monospace;
-  font-size: clamp(13px + 0.5vw);
+  font-size: clamp(12px, 0.9vw + 10px, 18px);
   text-shadow: 1px 2px 0 #111, 0 0 6px #24f0ffcc;
   box-sizing: border-box;
   overflow: hidden !important;
 }
+/* Center the app using flex so the game frame can size responsively */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100svh;
+  /* Respect iOS safe areas (iPad/iPhone) */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 /* --- GAME CONTAINER: Retro CRT Look, Responsive --- */
 #game-container {
-  position: absolute; 
-  top: 50%; left: 50%;
-  width: 1200px;
-  height: 840px;
-  max-width: 98vw; max-height: 98vh;
+  position: relative;
+  /* Fit within both viewport width and height while preserving 1200x840 ratio */
+  width: min(98vw, calc(98svh * 1200 / 840));
+  height: auto;
+  aspect-ratio: 1200 / 840;
   min-width: 320px; min-height: 240px;
-  transform: translate(-50%, -50%);
   background: #180f2b;
   border: 6px solid #ffe30e;
   border-radius: 18px;
@@ -160,7 +216,7 @@ html, body {
 }
 /* --- OVERLAPPING SCREENS: Only 1 visible --- */
 .screen {
-  position: absolute center !important;
+  position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
@@ -174,7 +230,7 @@ html, body {
   background: none;
   display: none;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-direction: column;
   overflow: hidden;
 }
@@ -192,8 +248,8 @@ html, body {
 /* Responsive fallback for smaller screens */
 @media (max-width: 820px), (max-height: 730px) {
   #game-container {
-    width: 98vw;
-    height: 98vh;
+    width: min(98vw, calc(98svh * 1200 / 840));
+    height: auto;
     min-width: 0;
     min-height: 0;
   }
@@ -256,7 +312,7 @@ html, body {
   font-family: 'Press Start 2P', 'Orbitron', monospace, sans-serif;
 }
 .opening-text {
-  font-size: 1.5em;
+  font-size: clamp(1.1rem, 1.2vw + 0.9rem, 1.6rem);
   letter-spacing: 0.09em;
   margin-bottom: 2.2em;
   text-shadow: 0 0 18px #00ffd2;
@@ -328,7 +384,7 @@ html, body {
   color: #ffe066;
   font-family: 'Press Start 2P', monospace;
   text-align: center;
-  font-size: 1.18rem;
+  font-size: clamp(1rem, 0.9vw + 0.8rem, 1.2rem);
   line-height: 1.7;
   filter: drop-shadow(0 0 20px #ff1697ee) drop-shadow(0 0 8px #24f0ff88);
   animation: starwars-scroll 61.5s linear forwards;
@@ -442,13 +498,14 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 184px;
-  min-height: 58px;
+  min-width: clamp(120px, 14vw, 184px);
+  min-height: clamp(36px, 6vw, 58px);
+  font-size: clamp(0.78rem, 0.4vw + 0.68rem, 0.95rem);
   gap: 0.2em;
 }
 .honorary-title-badge {
   font-family: 'Press Start 2P', monospace, sans-serif;
-  font-size: 0.79em;
+  font-size: clamp(0.72rem, 0.3vw + 0.62rem, 0.86rem);
   color: #fffad2;
   background: #5c485a;
   border-radius: 9px;
@@ -530,10 +587,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-width: 700px;
+  gap: 0.5em;
+  flex: 1 1 auto;
   margin-left: auto;
   margin-right: auto;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   box-sizing: border-box;
 }
@@ -562,23 +620,18 @@ html, body {
   box-sizing: border-box;
   margin: 0 0 0.3em 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.5em;
-  overflow-y: auto;
-  max-height: 350px;
 }
 
 .problem-option-btn {
-  flex: 1 1 43%;
-  max-width: 43%;
-  min-width: 90px;
+  min-width: 160px;
   min-height: 2.7em;
   box-sizing: border-box;
   margin: 0.25em 0;
   padding: 0.48em 0.6em;
-  font-size: 1em;
+  font-size: clamp(0.9rem, 0.6vw + 0.8rem, 1.06rem);
   border-radius: 5px;
   border: 1.5px solid #555;
   background: #96801f;
@@ -598,9 +651,7 @@ html, body {
 
 @media (max-width: 700px) {
   .problem-option-btn {
-    flex: 1 1 100%;
-    max-width: 100%;
-    min-width: 70px;
+    min-width: 140px;
     font-size: 0.93em;
     padding: 0.44em 0.5em;
   }
@@ -613,8 +664,9 @@ html, body {
   padding: 0.6rem 0.7rem;
   min-height: 120px;
   /* max-height: calc(100vh - 270px); */ /* Old max-height removed per instructions */
-  max-height: 33vh;
+  max-height: 16vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
   font-size: 1.06rem;
   text-align: center;
   margin-bottom: 0.22rem;
@@ -684,8 +736,8 @@ html, body {
   font-size: 0.94rem;
   margin: 0.35em auto 0.35em auto;
   box-shadow: 0 0 8px #ffe30e55, 0 0 4px #24f0ff77;
-  max-width: 780px;
-  max-height: 72px;
+  max-width: min(90%, 780px);
+  max-height: min(12vh, 72px);
   text-align: center;
   position: relative;
   z-index: 12;
@@ -717,7 +769,7 @@ html, body {
   padding-left: 0.7em;
   background: rgba(30,14,40,0.18);
   border-radius: 0 9px 9px 0;
-  max-width: 680px;
+  max-width: min(92%, 680px);
 }
 .log-event::before {
   content: "⚡ ";
@@ -742,12 +794,14 @@ html, body {
 /* Updated cameo pop style */
 /* Popout animation for cameo */
 .log-cameo.cameo-pop {
-  font-size: 1.07rem;
-  box-shadow: 0 0 18px #ffe30e, 0 0 10px #ff1697bb;
-  border-color: #24f0ff;
-  background: linear-gradient(92deg, #66adff 30%, #ff1697 120%);
-  color: #240052 !important;
-  animation: cameoBubbleIn 0.15s cubic-bezier(.63,1.2,.32,1.01);
+  /* Disable zoom/flash effect to reduce clutter and lag */
+  animation: none !important;
+  transform: none !important;
+  font-size: inherit !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+  background: inherit !important;
+  color: inherit !important;
 }
 
 /* Slim scroll bar for cameo log if needed */
@@ -762,9 +816,7 @@ html, body {
 }
 
 /* Shrink to normal size */
-.cameo-shrink {
-  animation: cameoBubbleOut 0.05s cubic-bezier(.63,1.1,.32,1.01) auto;
-}
+.cameo-shrink { animation: none !important; }
 @keyframes cameoBubbleOut {
   0%   { transform: scale(1.0);}
   100% { transform: scale(1.0);}
@@ -815,6 +867,23 @@ button:hover, .button:hover {
   color: #ff1697;
   border-color: #24f0ff;
   box-shadow: 0 2px 18px #24f0ff44;
+}
+
+/* Ensure difficulty selection persists visually within the Start Menu.
+   The #start-menu button rules are more specific and can override base
+   .difficulty-btn.selected styles; reinforce selection here. */
+#start-menu .difficulty-btn.selected {
+  background: #ffe30e;
+  color: #ff1697;
+  border-color: #24f0ff;
+  box-shadow: 0 2px 18px #24f0ff66;
+}
+#start-menu .difficulty-btn.selected:hover,
+#start-menu .difficulty-btn.selected:focus {
+  background: #ffe30e;
+  color: #ff1697;
+  border-color: #24f0ff;
+  box-shadow: 0 4px 22px #24f0ff88;
 }
 
 /* --- PIXELATED RANDOM EFFECTS: SPARKS AND BLINKS --- */
@@ -886,7 +955,7 @@ button:hover, .button:hover {
 /* Slimmer scoreboard height and margins (priority override) */
 .score-item {
   min-height: 28px;
-  font-size: 0.89rem;
+  font-size: clamp(0.8rem, 0.4vw + 0.7rem, 0.95rem);
   padding: 0.09rem 0.48rem;
   margin: 0 0.28rem;
   display: flex;
@@ -909,7 +978,7 @@ button:hover, .button:hover {
 /* Slimmer titles display (priority override) */
 .titles-display {
   min-height: 28px;
-  font-size: 0.87rem;
+  font-size: clamp(0.78rem, 0.4vw + 0.68rem, 0.95rem);
   padding: 0.07em 0.08em;
   align-items: center;
   justify-content: center;
@@ -928,15 +997,13 @@ button:hover, .button:hover {
   margin: 0.15em 0.1em;
   text-shadow: 0 1px 4px #000, 0 0 8px #ffe30e55;
   white-space: nowrap;
-  font-size: 0.94em;
+  font-size: clamp(0.82em, 0.3vw + 0.74em, 0.98em);
 }
 
 /* === COMPACT AUDIO BUTTONS === */
 /* --- AUDIO CONTROLS FLEX ROW --- */
 .audio-controls-box {
-  position: absolute;
-  top: 20px;
-  right: 18px;
+  position: static; /* live inside the scoreboard topbar */
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1254,8 +1321,9 @@ button:hover, .button:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 3rem 1rem 2.5rem 1rem;
+  justify-content: flex-start; /* start at top; content can scroll to fit */
+  padding: 1.6rem 1rem 1.4rem 1rem;
+  gap: 0.6rem;
   margin: 0;
   background: linear-gradient(110deg, #1a0e21 80%, #230d23 100%);
   border-radius: 18px;
@@ -1266,17 +1334,99 @@ button:hover, .button:hover {
   z-index: 2;
   animation: panel-pop 0.8s cubic-bezier(.28,1.6,.6,1.03) both;
   box-sizing: border-box;
+  overflow: auto;
+  /* Safe-area aware padding to prevent top/bottom clipping on iOS */
+  padding-top: max(1rem, calc(env(safe-area-inset-top) + 0.6rem));
+  padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.6rem));
+}
+/* Start menu config: place Mode to the right of Difficulty on wide screens */
+#start-menu .startmenu-config {
+  width: 100%;
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 1rem 1.4rem;
+  align-items: start;
+}
+#start-menu .startmenu-col h3 { margin: 0.2rem 0 0.4rem 0; }
+#start-menu .diff-options,
+#start-menu .mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+  align-items: center;
+}
+#start-menu .begin-wrap { margin-top: 0.6rem; }
+
+/* Compact stack on narrow screens */
+@media (max-width: 820px) {
+  #start-menu .startmenu-config {
+    grid-template-columns: 1fr;
+    max-width: 680px;
+  }
 }
 
-/* --- Start Menu Bottom Buttons (How to Play, Credits) --- */
+/* --- Start Menu Fit & Spacing (compact defaults) --- */
+#start-menu {
+  max-height: 90svh;      /* never taller than the window */
+  overflow-y: auto;      /* scroll if truly needed */
+  padding: 1rem;         /* reduce excess padding */
+  -webkit-overflow-scrolling: touch; /* smooth iOS scroll */
+}
+
+#start-menu h1,
+#start-menu h2,
+#start-menu h3,
+#start-menu p,
+#start-menu label {
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+}
+
+/* Remove default top margins that can push headings off-screen */
+#start-menu h1, #start-menu h2 { margin-top: 0; }
+
+/* Prevent headings from ballooning and pushing content out (slightly smaller) */
+#start-menu h1 { font-size: clamp(1.2rem, 1.1vw + 0.95rem, 1.75rem); }
+#start-menu h2 { font-size: clamp(1rem, 0.9vw + 0.8rem, 1.45rem); }
+
+#start-menu button {
+  margin: 0.3rem 0;
+}
+
 #start-menu .startmenu-bottom-btns {
-  position: absolute;
-  bottom: 32px;
-  right: 40px;
+  position: static;      /* keep in flow for iOS */
+  bottom: auto; right: auto;
+  margin-top: 0.5rem;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* --- Start Menu Bottom Buttons (How to Play, Credits) ---
+   Keep in normal flow by default so they never clip off-screen.
+*/
+#start-menu .startmenu-bottom-btns {
+  position: static;
+  bottom: auto; right: auto;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
   z-index: 10;
+  align-self: center;
+}
+
+/* On very tall displays, float the small buttons to bottom-right for flair */
+@media (min-height: 1000px) and (min-width: 900px) {
+  #start-menu {
+    justify-content: center;
+  }
+  #start-menu .startmenu-bottom-btns {
+    position: absolute;
+    right: 20px;
+    bottom: 16px;
+    flex-direction: column;
+  }
 }
 #start-menu .menu-small-btn {
   min-width: 70px;
@@ -1302,10 +1452,10 @@ button:hover, .button:hover {
 
 #start-menu .main-title {
   font-family: 'Cinzel', 'Press Start 2P', 'Forum', serif;
-  font-size: 2.1rem;
+  font-size: clamp(1.4rem, 1.4vw + 1rem, 2rem);
   color: #ffe30e;
   text-shadow: 0 0 16px #24f0ffcc, 0 2px 4px #180f2b, 0 0 44px #ff1697bb;
-  margin-bottom: 0.85em;
+  margin-bottom: 0.5em;
   letter-spacing: 0.10em;
   font-variant: small-caps;
   text-align: center;
@@ -1318,12 +1468,12 @@ button:hover, .button:hover {
 #start-menu .menu-desc {
   font-family: 'IM Fell English SC', 'Cinzel', 'Forum', serif;
   color: #fffad2;
-  font-size: 1.12rem;
-  margin-bottom: 2.1em;
+  font-size: clamp(0.95rem, 0.6vw + 0.8rem, 1.12rem);
+  margin-bottom: 1.1em;
   letter-spacing: 0.04em;
   text-align: center;
   background: rgba(20,10,45,0.39);
-  padding: 0.8em 1.2em;
+  padding: 0.6em 1em;
   border-radius: 11px;
   box-shadow: 0 2px 10px #ffe30e22;
   border: 2px solid #24f0ff44;
@@ -1331,13 +1481,13 @@ button:hover, .button:hover {
 
 #start-menu .menu-btn, #start-menu button {
   font-family: 'Press Start 2P', 'Cinzel', monospace, serif;
-  font-size: 1.16rem;
+  font-size: clamp(0.95rem, 0.6vw + 0.85rem, 1.08rem);
   background: linear-gradient(90deg,#180f2b 80%,#ff1697 130%);
   color: #24f0ff;
   border: 3px solid #ffe30e;
   border-radius: 10px;
-  padding: 1em 2.4em;
-  margin: 1.4em 0.6em 0.7em 0.6em;
+  padding: 0.75em 1.8em;
+  margin: 0.8em 0.6em 0.5em 0.6em;
   letter-spacing: 0.07em;
   box-shadow: 0 4px 20px #24f0ff44, 0 0 10px #ff169744;
   cursor: pointer;
@@ -1454,9 +1604,81 @@ button:hover, .button:hover {
   min-width: 260px;
   color: #ffe30e;
   text-align: center;
-  font-family: 'Press Start 2P' serif;
+  font-family: 'Press Start 2P', serif;
   font-size: 1.15em;
 }
+#event-tree-modal.modal {
+  position: fixed;
+  z-index: 4200;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(12, 10, 24, 0.92);
+  transition: opacity 0.22s;
+}
+#event-tree-modal.hidden { display: none; }
+.event-tree-content {
+  background: linear-gradient(108deg, #18122b 85%, #7e18c8 115%);
+  border: 3px solid #24f0ff;
+  border-radius: 17px;
+  box-shadow: 0 4px 28px #000a, 0 0 12px #ffe30e55;
+  padding: 1.4em 1.6em 1.4em;
+  max-width: min(84vw, 760px);
+  min-width: 300px;
+  color: #ffe30e;
+  text-align: left;
+  font-family: 'Press Start 2P', serif;
+  font-size: clamp(1rem, 0.6vw + 0.9rem, 1.15rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+}
+.event-tree-image-wrap {
+  width: 100%;
+  max-height: 36vh;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 2px solid #24f0ff88;
+  display: none; /* shown when image is present */
+}
+#event-tree-image {
+  width: 100%; height: auto;
+  display: block;
+}
+.event-tree-desc {
+  background: linear-gradient(90deg, #1a0e21 85%, #ffe30e33 100%);
+  border: 2px solid #24f0ff;
+  border-radius: 12px;
+  padding: 1.1em 1.3em;
+  color: #ffe30e;
+  box-shadow: 0 2px 18px #24f0ff33, 0 0 6px #ff169744;
+  line-height: 1.6;
+}
+.event-tree-cameo {
+  background: linear-gradient(92deg, #1e1830 85%, #24f0ff15 120%);
+  border-left: 5px solid #24f0ff;
+  border-radius: 0 13px 13px 0;
+  padding: 0.85em 1.1em 0.85em 1.2em;
+  color: #fffad2;
+  font-style: italic;
+  box-shadow: 0 1px 7px #24f0ff33, 0 0 2px #ff169733;
+}
+#event-tree-close-btn {
+  align-self: center;
+  margin-top: 0.6em;
+  padding: 0.6em 1.6em;
+  font-size: 1.02em;
+  background: #ffe30e;
+  color: #231c23;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', serif;
+  font-weight: bold;
+  box-shadow: 0 1px 7px #231c2350;
+  transition: background 0.22s, color 0.22s;
+}
+#event-tree-close-btn:hover { background: #fffad2; color: #7e18c8; }
 #random-event-close-btn {
   margin-top: 1.3em;
   padding: 0.6em 1.6em;
@@ -1478,7 +1700,7 @@ button:hover, .button:hover {
 
 /* === CUTSCENE PAN/ZOOM FX (NEW) === */
 #cutscene-img-zoom {
-  width: 700px; height: 700px; /* Update if your source is a different size */
+  width: min(70vmin, 700px); height: auto; /* responsive */
   max-width: none;
   will-change: transform;
   transform: scale(2.0) translate(-180px, -190px);
@@ -1539,15 +1761,16 @@ button:hover, .button:hover {
   border-radius: 18px;
   box-shadow: 0 2px 40px #24f0ff88, 0 0 24px #ff1697bb;
   padding: 2.2em 2.8em 1.2em 2.8em;
-  width: 440px;
+  width: clamp(320px, 80vw, 640px);
   max-width: 90vw;
   min-width: 280px;
   max-height: 80vh;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth iOS */
   color: #ffe30e;
   text-align: left;
   font-family: 'Cinzel', 'Press Start 2P', monospace, serif;
-  font-size: 1.13rem;
+  font-size: clamp(1rem, 0.6vw + 0.9rem, 1.15rem);
   animation: panel-pop 0.6s cubic-bezier(.28,1.2,.6,1.13) both;
   position: relative;
 }
@@ -1559,7 +1782,41 @@ button:hover, .button:hover {
     padding: 1.3em 0.7em 1.1em 0.7em;
     font-size: 1em;
   }
-}.modal-content h2, .modal-content h3 {
+}
+
+/* Compact the start menu on short screens */
+@media (max-height: 800px) {
+  #start-menu {
+    padding: 1.2rem 0.8rem 1rem 0.8rem;
+    gap: 0.5rem;
+  }
+  #start-menu .main-title { margin-bottom: 0.4em; }
+  #start-menu .menu-desc { margin-bottom: 0.8em; }
+  #start-menu .menu-btn, #start-menu button {
+    padding: 0.65em 1.5em;
+    margin: 0.6em 0.5em 0.4em 0.5em;
+  }
+  #start-menu .startmenu-bottom-btns { gap: 6px; }
+}
+@media (max-height: 700px) {
+  #start-menu {
+    padding: 0.9rem 0.6rem 0.8rem 0.6rem;
+    gap: 0.4rem;
+  }
+  #start-menu .main-title { font-size: clamp(1.2rem, 1vw + 0.9rem, 1.6rem); }
+  #start-menu .menu-desc { font-size: clamp(0.9rem, 0.5vw + 0.75rem, 1.02rem); }
+  #start-menu .menu-btn, #start-menu button { font-size: clamp(0.9rem, 0.5vw + 0.8rem, 1.02rem); }
+  #start-menu .startmenu-bottom-btns { position: static; align-self: center; }
+}
+
+/* Center start menu vertically on very tall screens only */
+@media (min-height: 1000px) {
+  #start-menu {
+    justify-content: center;
+  }
+}
+
+.modal-content h2, .modal-content h3 {
   color: #24f0ff;
   font-family: 'Cinzel', 'Forum', serif;
   margin-top: 0;
@@ -1664,5 +1921,41 @@ button:hover, .button:hover {
     height: 30px;
   }
 }
-
-
+/* --- MODAL BASE LAYERING (ensures event trees & random events show on top) --- */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 3000; /* ensure above game UI, scoreboard, summaries */
+}
+.modal .random-event-content,
+.modal .event-tree-content,
+.modal .modal-content {
+  max-width: min(92vw, 760px);
+  width: auto;
+  box-sizing: border-box;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  border: 3px solid #ffe30e;
+  box-shadow: 0 8px 42px #24f0ff88, 0 0 0 6px #7e18c866;
+  background: linear-gradient(135deg, #1a0e21 70%, #180f2b 100%);
+}
+#random-event-desc, #event-tree-desc {
+  margin-bottom: 0.6rem;
+  line-height: 1.35;
+}
+#random-event-cameo, #event-tree-cameo {
+  font-style: italic;
+  opacity: 0.95;
+  margin-bottom: 0.4rem;
+}
+.modal button#random-event-close-btn,
+.modal button#event-tree-close-btn {
+  margin-top: 0.4rem;
+}
