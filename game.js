@@ -18,6 +18,7 @@ function makeRomanName(base) {
 let problemArea, messageLog, roundNumEl, yearDisplay, senatorNameDisplay, treasuryDisplay, riotDisplay, unrestDisplay, infraDisplay, politicsDisplay;
 let btnNextRound, btnRestart, roundSummary, summaryRound, roundSummaryText, gameOverScreen, gameOverText;
 let difficultyBtns, chosenDiffP, nameInput;
+let gameMode = 'standard';
 let openingCard, openingBtn, introScreen, scrollText, cutsceneScreen, startMenu, btnStart;
 let introSkipOverlay;
 let audioToggle, JupiterTheme, MarsTheAvenger, epicTheme, gameScreen;
@@ -109,7 +110,15 @@ let unrest = 0;
 let infrastructure = 0;
 let politics = 0;
 let senatorName = "";
-let honoraryTitles = [];
+// Share honorary titles with other modules (event trees) via window
+let honoraryTitles = (function(){
+  try {
+    if (!Array.isArray(window.honoraryTitles)) window.honoraryTitles = [];
+    return window.honoraryTitles;
+  } catch(_) {
+    return [];
+  }
+})();
 let usedProblems = [];
 let chosenDifficulty = null;
 
@@ -153,7 +162,9 @@ function checkImmediateGameOver() {
   return false;
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+  window.addEventListener("DOMContentLoaded", () => {
+  // Ensure global inventory exists
+  try { window.inventory = Array.isArray(window.inventory) ? window.inventory : []; } catch(_) {}
   openingCard         = document.getElementById("opening-card");
   openingBtn          = document.getElementById("opening-continue-btn");
   introScreen         = document.getElementById("intro-screen");
@@ -188,6 +199,10 @@ window.addEventListener("DOMContentLoaded", () => {
   gameOverScreen      = document.getElementById("game-over-screen");
   gameOverText        = document.getElementById("game-over-text");
   titlesDisplay       = document.getElementById("titles-display");
+  const btnLoot       = document.getElementById("btn-loot");
+  const lootModal     = document.getElementById("loot-modal");
+  const lootListEl    = document.getElementById("loot-list");
+  const lootEmptyMsg  = document.getElementById("loot-empty-msg");
 
   const btnReturnMenu = document.getElementById("btn-return-menu");
 
@@ -225,8 +240,31 @@ window.addEventListener("DOMContentLoaded", () => {
     if (e.key === 'Escape') {
       howtoModal && howtoModal.classList.add('hidden');
       creditsModal && creditsModal.classList.add('hidden');
+      lootModal && lootModal.classList.add('hidden');
     }
   });
+
+  // --- LOOT MODAL LOGIC ---
+  function renderLootList() {
+    try {
+      const inv = Array.isArray(window.inventory) ? window.inventory : [];
+      if (lootEmptyMsg) lootEmptyMsg.style.display = inv.length ? 'none' : '';
+      if (!lootListEl) return;
+      lootListEl.innerHTML = '';
+      if (!inv.length) return;
+      inv.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        lootListEl.appendChild(li);
+      });
+    } catch(_) {}
+  }
+  if (btnLoot && lootModal) {
+    btnLoot.addEventListener('click', () => {
+      renderLootList();
+      lootModal.classList.remove('hidden');
+    });
+  }
   // --- AUDIO TOGGLE LOGIC ---
   function stopAllMusic() {
     [JupiterTheme, MarsTheAvenger, epicTheme].forEach(audio => {
@@ -234,34 +272,53 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
   function resumeCurrentMusic() {
-    // Decide which screen is visible, and play the matching theme
-    if (!audioMuted) {
-      if (!openingCard.classList.contains("hidden")) {
-        // Opening card screen (maybe silent, or future theme)
-        // No music
-      } else if (!introScreen.classList.contains("hidden")) {
-        if (JupiterTheme) {
-          JupiterTheme.currentTime = 0;
-          JupiterTheme.volume = 0.8;
-          JupiterTheme.play().catch(()=>{});
-        }
-      } else if (!cutsceneScreen.classList.contains("hidden")) {
+    // Always stop current track(s) before switching
+    stopAllMusic();
+    if (audioMuted) return;
+
+    // If an Event Tree modal is visible, prefer MarsTheAvenger during story play
+    try {
+      const isVisible = (id) => {
+        const el = document.getElementById(id);
+        return !!(el && !el.classList.contains("hidden"));
+      };
+      if (isVisible('event-tree-modal')) {
         if (MarsTheAvenger) {
           MarsTheAvenger.currentTime = 0;
           MarsTheAvenger.volume = 1;
           MarsTheAvenger.play().catch(()=>{});
-        }
-      } else if (!startMenu.classList.contains("hidden") ||
-                 !gameScreen.classList.contains("hidden")) {
-        if (epicTheme) {
-          epicTheme.currentTime = 0;
-          epicTheme.volume = 0.4;
-          epicTheme.play().catch(()=>{});
+          return;
         }
       }
-      // Add more as you add screens!
+    } catch(_) {}
+
+    if (!openingCard.classList.contains("hidden")) {
+      // Opening card screen (maybe silent, or future theme)
+      // No music
+    } else if (!introScreen.classList.contains("hidden")) {
+      if (JupiterTheme) {
+        JupiterTheme.currentTime = 0;
+        JupiterTheme.volume = 0.8;
+        JupiterTheme.play().catch(()=>{});
+      }
+    } else if (!cutsceneScreen.classList.contains("hidden")) {
+      if (MarsTheAvenger) {
+        MarsTheAvenger.currentTime = 0;
+        MarsTheAvenger.volume = 1;
+        MarsTheAvenger.play().catch(()=>{});
+      }
+    } else if (!startMenu.classList.contains("hidden") ||
+               !gameScreen.classList.contains("hidden")) {
+      if (epicTheme) {
+        epicTheme.currentTime = 0;
+        epicTheme.volume = 0.4;
+        epicTheme.play().catch(()=>{});
+      }
     }
+    // Add more as you add screens!
   }
+  // Expose for other modules (e.g., event trees) to request music state updates
+  try { window.resumeCurrentMusic = resumeCurrentMusic; } catch(_) {}
   const allAudio = [JupiterTheme, MarsTheAvenger, epicTheme];
   let audioMuted = false;
   if (audioToggle) {
@@ -414,16 +471,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // --- DIFFICULTY BUTTONS ---
   if (difficultyBtns && chosenDiffP) {
+    function updateDifficultyUI() {
+      try {
+        difficultyBtns.forEach(b => {
+          const isSel = (b && b.dataset && b.dataset.diff === chosenDifficulty);
+          if (isSel) b.classList.add('selected'); else b.classList.remove('selected');
+        });
+      } catch(_) {}
+    }
     difficultyBtns.forEach(btn => {
       btn.addEventListener('click', function() {
-        difficultyBtns.forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
         chosenDifficulty = btn.dataset.diff;
         const denarii = difficultyMap[chosenDifficulty] ?? "???";
         chosenDiffP.textContent = `Chosen difficulty: ${chosenDifficulty.toUpperCase()} (${denarii} denarii)`;
+        updateDifficultyUI();
         checkStartButton();
       });
     });
+    // On load, reapply UI if a difficulty was remembered somehow
+    updateDifficultyUI();
   }
   // --- NAME INPUT (Roman name preview) ---
   if (nameInput) {
@@ -443,6 +509,36 @@ window.addEventListener("DOMContentLoaded", () => {
   // --- START GAME BUTTON ---
   if (btnStart) btnStart.addEventListener("click", startGame);
 
+  // Mode selection (defaults to 'standard' and doesn't gate Start)
+  const modeInputs = document.querySelectorAll('input[name="mode"]');
+  if (modeInputs && modeInputs.length) {
+    modeInputs.forEach(r => r.addEventListener('change', () => {
+      const sel = document.querySelector('input[name="mode"]:checked');
+      gameMode = sel ? sel.value : 'standard';
+      // Start button enablement no longer depends on mode selection
+      // Reassert chosen difficulty label in case any UI reflow cleared it
+      try {
+        if (chosenDifficulty && chosenDiffP) {
+          const denarii = difficultyMap[chosenDifficulty] ?? "???";
+          chosenDiffP.textContent = `Chosen difficulty: ${chosenDifficulty.toUpperCase()} (${denarii} denarii)`;
+        }
+      } catch(_) {}
+      // Also re-assert selection highlight
+      try {
+        if (difficultyBtns) {
+          difficultyBtns.forEach(b => b.classList.toggle('selected', b.dataset.diff === chosenDifficulty));
+        }
+      } catch(_) {}
+      checkStartButton();
+    }));
+    let sel = document.querySelector('input[name="mode"]:checked');
+    if (!sel) {
+      const std = document.querySelector('input[name="mode"][value="standard"]');
+      if (std) { std.checked = true; sel = std; }
+    }
+    gameMode = sel ? sel.value : 'standard';
+  }
+
   // ========== AUDIO NEXT TRACK BUTTON ROBUST HANDLER ==========
   function setupAudioNextTrackBtn() {
     const audioNextTrack = document.getElementById("audio-next-track");
@@ -460,6 +556,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function checkStartButton() {
+    // Allow any selection order; default mode is standard, so no mode requirement here
     btnStart.disabled = !(chosenDifficulty && nameInput.value.trim().length > 0);
   }
 
@@ -473,7 +570,9 @@ window.addEventListener("DOMContentLoaded", () => {
     unrest = 0;
     infrastructure = 0;
     politics = 0;
-    honoraryTitles = [];
+    // Clear titles in-place so window.honoraryTitles stays in sync
+    if (Array.isArray(honoraryTitles)) honoraryTitles.length = 0;
+    try { window.honoraryTitles = honoraryTitles; } catch(_) {}
     usedProblems = [];
     let base = nameInput.value.trim();
     senatorName = "" + makeRomanName(base);
@@ -490,6 +589,56 @@ window.addEventListener("DOMContentLoaded", () => {
     updateScoreboard();
     problemArea.innerHTML = '';
     messageLog.innerHTML = '';
+    // Branch by selected mode
+    if (gameMode === 'eventTrees' && (window.EventTrees || window.startRandomEventTree)) {
+      const data = (window.EventTrees && window.EventTrees.data) || (window.randomEventTrees) || {};
+      const keys = Object.keys(data);
+      const key = keys[Math.floor(Math.random() * keys.length)] || null;
+      if (key) {
+        // Start immediately to guarantee rendering; log for flavor separately
+        const runner = (k, cb) => {
+          if (window.EventTrees && typeof window.EventTrees.startRandomEventTree === 'function') return window.EventTrees.startRandomEventTree(k, cb);
+          if (typeof window.startRandomEventTree === 'function') return window.startRandomEventTree(k, cb);
+        };
+        runner(key, () => {
+          runRound(); // resume campaign afterward
+        });
+        delayedLog('Starting Event Story: ' + key.replace(/_/g, ' '), 'log-info');
+        return;
+      }
+    }
+
+    if (gameMode === 'spins' && window.Spin) {
+      delayedLog('Spin Trials: test your fate!', 'log-info', () => {
+        const q = window.Spin.checkAllSpins();
+        if (!q || q.length === 0) {
+          // Fallback: always show one demo spin so mode is meaningful
+          const pools = [];
+          if (window.Spin.data && Array.isArray(window.Spin.data.unrestSpinStories) && window.Spin.data.unrestSpinStories.length) {
+            pools.push({ type: 'unrest', list: window.Spin.data.unrestSpinStories });
+          }
+          if (window.Spin.data && Array.isArray(window.Spin.data.politicsSpinStories) && window.Spin.data.politicsSpinStories.length) {
+            pools.push({ type: 'politics', list: window.Spin.data.politicsSpinStories });
+          }
+          if (pools.length) {
+            const chosenPool = pools[Math.floor(Math.random() * pools.length)];
+            const story = chosenPool.list[Math.floor(Math.random() * chosenPool.list.length)];
+            window.Spin.triggerSpin(chosenPool.type, 0, () => {
+              delayedLog('Spin resolved. Back to the Senate floor.', 'log-neutral', () => runRound());
+            }, story);
+          } else {
+            // If somehow no pools exist, just proceed to campaign
+            runRound();
+          }
+        } else {
+          window.Spin.processSpinQueue(q, () => {
+            delayedLog('Spins resolved. Back to the Senate floor.', 'log-neutral', () => runRound());
+          });
+        }
+      });
+      return;
+    }
+
     runRound();
   }
 
@@ -512,6 +661,11 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function showNextProblem() {
+    // Event tree interrupt layer before normal problems
+    if (window.EventTrees && typeof window.EventTrees.maybeStartRandom === 'function' && !window.EventTrees.isActive()) {
+      const started = window.EventTrees.maybeStartRandom(() => showNextProblem());
+      if (started) return; // event tree will resume here when finished
+    }
     if (problemsDoneThisRound >= PROBLEMS_PER_ROUND) {
       showRoundSummary();
       return;
@@ -570,7 +724,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function resetGame() {
     chosenDifficulty = null;
-    honoraryTitles = [];
+    // Clear titles in-place so window.honoraryTitles stays in sync
+    if (Array.isArray(honoraryTitles)) honoraryTitles.length = 0;
+    try { window.honoraryTitles = honoraryTitles; } catch(_) {}
     usedProblems = [];
     currentRound = 1;
     problemsDoneThisRound = 0;
@@ -589,6 +745,34 @@ window.addEventListener("DOMContentLoaded", () => {
     if (audioNextTrack) audioNextTrack.classList.add('hidden');
     // Hide the return to menu button on reset
     if (btnReturnMenu) btnReturnMenu.classList.add('hidden');
+
+    // Reset Event Tree session memory so a new game is clean
+    try {
+      if (window._playedEventTrees && typeof window._playedEventTrees.clear === 'function') {
+        window._playedEventTrees.clear();
+      } else {
+        window._playedEventTrees = new Set();
+      }
+    } catch(_) {}
+    try {
+      const trees = window.randomEventTrees || {};
+      Object.keys(trees).forEach(k => { try { delete trees[k]._completed; delete trees[k]._lastPlayedAt; } catch(_) {} });
+    } catch(_) {}
+    try {
+      if (window.EventTrees) {
+        window.EventTrees._suppressNextOnce = false;
+        window.EventTrees._blockUntil = 0;
+        if (typeof window.EventTrees.setArc === 'function') window.EventTrees.setArc(null);
+      }
+    } catch(_) {}
+    // Ensure event modals are hidden
+    try {
+      const m1 = document.getElementById('event-tree-modal');
+      const m2 = document.getElementById('random-event-modal');
+      if (m1) m1.classList.add('hidden');
+      if (m2) m2.classList.add('hidden');
+      document.querySelectorAll('.event-options').forEach(el => el.remove());
+    } catch(_) {}
   }
 
   // ========== UPDATE SCOREBOARD ==========
@@ -600,6 +784,14 @@ window.addEventListener("DOMContentLoaded", () => {
     if (unrestDisplay) unrestDisplay.textContent = unrest;
     if (infraDisplay) infraDisplay.textContent = infrastructure;
     if (politicsDisplay) politicsDisplay.textContent = politics;
+    // Update loot button count if present
+    try {
+      const btnLoot = document.getElementById('btn-loot');
+      if (btnLoot) {
+        const count = Array.isArray(window.inventory) ? window.inventory.length : 0;
+        btnLoot.textContent = `🎒 Loot${count ? ` (${count})` : ''}`;
+      }
+    } catch(_) {}
 
     // --- SCOREBOARD BAR GRAPH LOGIC ---
     // Helper function for scoreboard bars with support for "reverse" coloring.
@@ -670,6 +862,13 @@ window.addEventListener("DOMContentLoaded", () => {
     applyDangerShake('infra-bar', infrastructure <= -10);
     // Danger if POLITICS is too low (<= -7)
     applyDangerShake('politics-bar', politics <= -7);
+
+    // --- TIMELINE BAR FILL LOGIC ---
+    const timelineFill = document.getElementById("timeline-fill");
+    if (timelineFill) {
+      let progress = ((totalRounds - currentRound + 1) / totalRounds) * 100;
+      timelineFill.style.width = progress + "%";
+    }
   }
 
 });
@@ -1232,10 +1431,12 @@ function pickRandomEvent() {
       descEl.textContent = event.desc;
       cameoEl.textContent = event.cameo || "";
       modal.classList.remove("hidden");
+      modal.style.zIndex = "4000"; // ensure above all game UI
       closeBtn.focus();
 
       function closeModal() {
         modal.classList.add("hidden");
+        modal.style.zIndex = ""; // reset to default when closed
         closeBtn.removeEventListener("click", closeModal);
       }
       closeBtn.addEventListener("click", closeModal, { once: true });
@@ -1245,14 +1446,21 @@ function pickRandomEvent() {
   return null;
 }
 function updatetitlesDisplay() {
-  const titleBar = document.querySelector(".titles-display  ");
-  if (!titleBar) return;
-  titleBar.innerHTML = "";
-  honoraryTitles.forEach(title => {
-    const badge = document.createElement("div");
-    badge.className = "honorary-title-badge";
+  const left = document.getElementById('titles-left');
+  const right = document.getElementById('titles-right');
+  if (!left && !right) return;
+  if (left) left.innerHTML = '';
+  if (right) right.innerHTML = '';
+  const list = (function(){
+    try { return Array.isArray(window.honoraryTitles) ? window.honoraryTitles : honoraryTitles; }
+    catch(_) { return honoraryTitles || []; }
+  })();
+  list.forEach((title, idx) => {
+    const badge = document.createElement('div');
+    badge.className = 'honorary-title-badge';
     badge.textContent = title;
-    titleBar.appendChild(badge);
+    const target = (left && right) ? ((idx % 2 === 0) ? left : right) : (left || right);
+    if (target) target.appendChild(badge);
   });
 }
 // ========== END ROUND & SUMMARY ==========
@@ -1411,13 +1619,91 @@ function endGame(survived = false, msg = "") {
 // ========== UPDATE SCOREBOARD & DELAYED LOGS ==========
 // Call this at the end of updateScoreboard()
 function updateScoreboard() {
-  yearDisplay.textContent = year;
-  senatorNameDisplay.textContent = senatorName;
-  treasuryDisplay.textContent = treasury;
-  riotDisplay.textContent = riotTokens;
-  unrestDisplay.textContent = unrest;
-  infraDisplay.textContent = infrastructure;
-  politicsDisplay.textContent = politics;
+  if (yearDisplay) yearDisplay.textContent = year;
+  if (senatorNameDisplay) senatorNameDisplay.textContent = senatorName;
+  if (treasuryDisplay) treasuryDisplay.textContent = treasury;
+  if (riotDisplay) riotDisplay.textContent = riotTokens;
+  if (unrestDisplay) unrestDisplay.textContent = unrest;
+  if (infraDisplay) infraDisplay.textContent = infrastructure;
+  if (politicsDisplay) politicsDisplay.textContent = politics;
+
+  // Update loot button count if present
+  try {
+    const btnLoot = document.getElementById('btn-loot');
+    if (btnLoot) {
+      const count = Array.isArray(window.inventory) ? window.inventory.length : 0;
+      btnLoot.textContent = `🎒 Loot${count ? ` (${count})` : ''}`;
+    }
+  } catch(_) {}
+
+  // --- SCOREBOARD BAR GRAPH LOGIC ---
+  function updateScoreBar(barId, value, min, max, direction = "normal") {
+    const bar = document.getElementById(barId);
+    if (!bar) return;
+    let fill = bar.querySelector('.score-bar-fill');
+    if (!fill) {
+      fill = document.createElement('div');
+      fill.className = 'score-bar-fill';
+      bar.appendChild(fill);
+    }
+    const centerVal = 0;
+    let percent;
+    if (direction === "reverse") {
+      if (value <= centerVal) {
+        percent = (centerVal - value) / (centerVal - min);
+        fill.style.left = (50 - Math.min(1, percent) * 50) + '%';
+        fill.style.width = (Math.min(1, percent) * 50) + '%';
+        fill.style.background = '#4ec650';
+      } else {
+        percent = (value - centerVal) / (max - centerVal);
+        fill.style.left = '50%';
+        fill.style.width = (Math.min(1, percent) * 50) + '%';
+        fill.style.background = '#f44';
+      }
+    } else {
+      if (value >= centerVal) {
+        percent = (value - centerVal) / (max - centerVal);
+        fill.style.left = '50%';
+        fill.style.width = (Math.min(1, percent) * 50) + '%';
+        fill.style.background = '#4ec650';
+      } else {
+        percent = (centerVal - value) / (centerVal - min);
+        fill.style.left = (50 - Math.min(1, percent) * 50) + '%';
+        fill.style.width = (Math.min(1, percent) * 50) + '%';
+        fill.style.background = '#f44';
+      }
+    }
+  }
+  updateScoreBar('riot-bar', riotTokens, -6, 6, "reverse");
+  updateScoreBar('unrest-bar', unrest, -10, 10, "reverse");
+  updateScoreBar('infra-bar', infrastructure, -10, 12);
+  updateScoreBar('politics-bar', politics, -7, 15);
+
+  // --- DANGER SHAKE & DANGER CLASS LOGIC ---
+  function applyDangerShake(barId, dangerCondition) {
+    const bar = document.getElementById(barId);
+    if (!bar) return;
+    const fill = bar.querySelector('.score-bar-fill');
+    if (dangerCondition) {
+      bar.classList.add('danger-shake');
+      if (fill) fill.classList.add('danger', 'danger-shake');
+    } else {
+      bar.classList.remove('danger-shake');
+      if (fill) fill.classList.remove('danger', 'danger-shake');
+    }
+  }
+  applyDangerShake('riot-bar', riotTokens >= 6);
+  applyDangerShake('unrest-bar', unrest >= 10);
+  applyDangerShake('infra-bar', infrastructure <= -10);
+  applyDangerShake('politics-bar', politics <= -7);
+
+  // --- TIMELINE BAR FILL LOGIC ---
+  const timelineFill = document.getElementById("timeline-fill");
+  if (timelineFill) {
+    let progress = ((totalRounds - currentRound + 1) / totalRounds) * 100;
+    timelineFill.style.width = progress + "%";
+  }
+
   updatetitlesDisplay();
 }
 if (roundNumEl) roundNumEl.textContent = currentRound;
