@@ -2,22 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=820, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Rome: Expanded Chaos Edition</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="game-container">
-    <div class="audio-controls-box">
-      <button id="audio-toggle" title="Toggle music" class="audio-btn">
-        <img src="assets/buttons/cornu.png" alt="Toggle Audio" class="audio-icon" id="audio-icon-img" />
-      </button>
-      <button id="audio-next-track" title="Change Music Track" class="audio-btn hidden">
-        <img src="assets/buttons/lute.png" alt="Next Track" class="audio-icon" />
-      </button>
-      <button id="btn-return-menu" class="menu-btn">🏛️ Main Menu</button>
-
-    </div>
+    
     <div id="app">
       <div id="opening-card" class="screen">
         <div class="opening-card-inner">
@@ -73,7 +65,7 @@
       </div>
       <div id="cutscene-screen" class="screen cutscene-bg">
         <div id="cutscene-img-zoom-container">
-          <img id="cutscene-img-zoom" src="assets/cutscene/cutscene_1.png" alt="Jupiter Reclining" />
+          <img id="cutscene-img-zoom" src="assets/cutscene/Cutscene_1.png" alt="Jupiter Reclining" />
         </div>
       </div>
 
@@ -84,13 +76,28 @@
         <label for="name-input">Enter Your Name:</label><br/>
         <input type="text" id="name-input" placeholder="e.g. Maria, John..." /><br/>
 
-        <h3>Choose Difficulty:</h3>
-        <button class="difficulty-btn" data-diff="easy">Easy</button>
-        <button class="difficulty-btn" data-diff="normal">Normal</button>
-        <button class="difficulty-btn" data-diff="hard">Hard</button>
-
-        <p id="chosen-diff"><em>No difficulty selected</em></p>
-        <button id="btn-start" disabled>BEGIN</button>
+        <div class="startmenu-config">
+          <div class="startmenu-col">
+            <h3>Choose Difficulty:</h3>
+            <div class="diff-options">
+              <button type="button" class="difficulty-btn" data-diff="easy">Easy</button>
+              <button type="button" class="difficulty-btn" data-diff="normal">Normal</button>
+              <button type="button" class="difficulty-btn" data-diff="hard">Hard</button>
+            </div>
+            <p id="chosen-diff"><em>No difficulty selected</em></p>
+          </div>
+          <div class="startmenu-col">
+            <h3>Mode</h3>
+            <div class="mode-options">
+              <label><input type="radio" name="mode" value="standard" checked> Standard Campaign</label>
+              <label><input type="radio" name="mode" value="eventTrees"> Event Stories (interrupts)</label>
+              <label><input type="radio" name="mode" value="spins"> Spin Trials</label>
+            </div>
+            <div class="begin-wrap">
+              <button type="button" id="btn-start" disabled>BEGIN</button>
+            </div>
+          </div>
+        </div>
         <div class="startmenu-bottom-btns">
           <button id="btn-howto" class="menu-small-btn">How to Play</button>
           <button id="btn-credits" class="menu-small-btn">Credits / Citations</button>
@@ -100,6 +107,19 @@
       <!-- GAME SCREEN (everything hidden until game starts) -->
       <div id="game-screen" class="screen">
         <div id="scoreboard">
+          <div id="scoreboard-topbar">
+            <button id="btn-return-menu" class="menu-btn">🏛️ Main Menu</button>
+            <div id="timeline-bar"><div id="timeline-fill"></div></div>
+            <div class="audio-controls-box">
+              <button id="audio-toggle" title="Toggle music" class="audio-btn">
+                <img src="assets/buttons/cornu.png" alt="Toggle Audio" class="audio-icon" id="audio-icon-img" />
+              </button>
+              <button id="audio-next-track" title="Change Music Track" class="audio-btn hidden">
+                <img src="assets/buttons/lute.png" alt="Next Track" class="audio-icon" />
+              </button>
+            </div>
+            <button id="btn-loot" class="loot-btn" title="View your collected items">🎒 Loot</button>
+          </div>
           <div class="scoreboard-stats">
             <div class="scoreboard-row">
               <div class="score-item">Year: <span id="year-display"></span> BCE</div>
@@ -146,9 +166,7 @@
       <!-- AUDIO (Epic Theme, hidden) -->
     <audio id="MarsTheAvenger" src="assets/audio/MarsTheAvenger.mp3" preload="auto"></audio>
     <audio id="JupiterTheme" src="assets/audio/Jupiter.mp3" preload="auto"></audio>
-    <audio id="epicTheme" src="assets/audio/now_we_are_free_midi.mp3" preload="auto"></audio>    
-  
-</div>
+    <audio id="epicTheme" src="assets/audio/now_we_are_free_midi.mp3" preload="auto"></audio>
   <!-- RANDOM EVENT MODAL -->
   <div id="random-event-modal" class="modal hidden">
     <div class="random-event-content">
@@ -157,7 +175,26 @@
       <button id="random-event-close-btn">Continue</button>
     </div>
   </div>
-</div>
+  <!-- EVENT TREE MODAL (separate layer, supports future scene images) -->
+  <div id="event-tree-modal" class="modal hidden">
+    <div class="event-tree-content">
+      <div class="event-tree-image-wrap">
+        <img id="event-tree-image" alt="Event scene" class="hidden" />
+      </div>
+      <div id="event-tree-desc" class="event-tree-desc"></div>
+      <div id="event-tree-cameo" class="event-tree-cameo"></div>
+      <button id="event-tree-close-btn">Continue</button>
+    </div>
+  </div>
+  <!-- LOOT / INVENTORY MODAL -->
+  <div id="loot-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Your Cache</h2>
+      <p id="loot-empty-msg" style="display:none;">You haven't collected any items yet.</p>
+      <ul id="loot-list"></ul>
+    </div>
+    <button class="modal-close-btn outside" onclick="document.getElementById('loot-modal').classList.add('hidden')">Close</button>
+  </div>
   <!-- HOW TO PLAY MODAL -->
   <div id="howto-modal" class="modal hidden">
     <div class="modal-content">
@@ -277,6 +314,9 @@
     </div>
     <button class="modal-close-btn outside" onclick="document.getElementById('credits-modal').classList.add('hidden')">Close</button>
   </div>
+  <script src="data/event_trees.js"></script>
+  <script src="data/event_trees_runner.js"></script>
+  <script src="data/spin.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
