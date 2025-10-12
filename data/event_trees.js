@@ -493,7 +493,7 @@ whispering_scriptorium: {
   steps: [
     // Step 0 — Summons & first hint of the whisper (noir tone)
     {
-      text: "It's late. You stumble down a dark lane toward your domus after a rousing convivium when a voice calls harks your name. A messenger; the aedile requires a trusted investigator. A restricted scroll is missing. Take a swig of your flagon and head to the archivum.",
+      text: "It's late. You stumble down a dark lane toward your domus after a rousing convivium when a voice harks your name. A messenger; the aedile requires a trusted investigator. A restricted scroll is missing. Take a swig of your flagon and head to the archivum.",
       cameo: "Seven iron locks hang open like teeth. Between the stacks, something breathes—a thin susurrus like a secret trying not to be one.",
       options: [
         { label: "Step into the stacks—eyes open, mouth shut.", fixed: { text: "Your sandals whisper over marble; the air is colder between rows.", effect: () => {}, nextStep: 1 } },
