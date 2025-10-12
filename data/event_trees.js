@@ -1123,7 +1123,7 @@ aventine_baths_whodunnit: {
     meta: { tags: ["adventure","city"], weight: 1.0, enabled: true },
     steps: [
       {
-        text: "Aqueduct Collapse: A great arch buckle and water spills into the streets.",
+        text: "Aqueduct Collapse: A great arch buckles and water spills into the streets.",
         cameo: "An aedile pleads, 'We need funds now or the city thirsts!'",
         options: [
           {
